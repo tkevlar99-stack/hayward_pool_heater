@@ -39,6 +39,8 @@ The following pool heaters have been tested and are known to be compatible with 
 - **Majestic** heat pump (Hayward white label) using a **PC1001** controller.
 - **CPAC111** heat pump (Hayward) using a **PC1001** controller.
 
+User-contributed installation reports are collected in [docs/success-stories](docs/success-stories/). These reports include attribution, wiring notes, software versions, and known limitations when available.
+
 
 ## Features
 - **Receive Current Parameters:** Get real-time data from your pool heater, including temperatures and operating modes.
