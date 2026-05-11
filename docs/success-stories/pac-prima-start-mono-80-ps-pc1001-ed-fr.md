@@ -69,6 +69,12 @@ Those files are not copied here. See the source issue for the original attachmen
 
 ## Photos, Logs, And Attachments
 
-The original issue includes photos of the enclosure and links to YAML/header attachments. They are linked from the source issue instead of copied into the repository.
+The original issue includes photos of the enclosure and links to YAML/header attachments. The enclosure photos are copied into this repository so the story remains useful if the external image host removes them.
+
+![PAC PRIMA START MONO 80 PS remote display board wiring with ESP8266 interface](assets/pac-prima-start-mono-80-ps-pc1001-display-board-wiring-ed-fr.png)
+
+![PAC PRIMA START MONO 80 PS ESP8266 enclosure mounted beside the heater display](assets/pac-prima-start-mono-80-ps-pc1001-esp-enclosure-display-ed-fr.png)
+
+The YAML/header attachments remain linked from [issue #11](https://github.com/sle118/hayward_pool_heater/issues/11) instead of copied into the repository.
 
 Attribution for those materials remains with @ed-fr.
