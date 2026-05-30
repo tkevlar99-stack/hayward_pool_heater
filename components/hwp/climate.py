@@ -60,7 +60,6 @@ from esphome.const import (
     UNIT_CELSIUS,
     UNIT_MINUTE,
     CONF_OUTPUT,
-    CONF_INPUT,
     CONF_FILTERS,
     ENTITY_CATEGORY_DIAGNOSTIC,
     CONF_UPDATE_INTERVAL,
@@ -179,9 +178,8 @@ def create_throttle_avg_filter(sensor_name):
     }
 
 
-BASE_SCHEMA = climate.climate_schema(
+BASE_SCHEMA = climate.climate_schema(PoolHeater).extend(
     {
-        cv.GenerateID(CONF_ID): cv.declare_id(PoolHeater),
         cv.Required(CONF_GPIO_NETPIN): pins.gpio_pin_schema(
             {CONF_OUTPUT: True, CONF_INPUT: True}
         ),
@@ -223,344 +221,330 @@ BASE_SCHEMA = climate.climate_schema(
         ),
     }
 )
-INPUT_TYPES_TEMPLATE = dict[str, dict](
-    {
-        CONF_NUMBER: {
-            "schema": number.number_schema,
-            "registration_function": number.register_number,
-            "class_": number.Number,
-            "suffix": CONF_NUMBER,
+
+INPUT_TYPES_TEMPLATE: dict[str, dict] = {
+    CONF_NUMBER: {
+        "schema": number.number_schema,
+        "registration_function": number.register_number,
+        "class_": number.Number,
+        "suffix": CONF_NUMBER,
+    },
+    "select": {
+        "schema": select.select_schema,
+        "registration_function": select.register_select,
+        "class_": select.Select,
+        "suffix": "select",
+    },
+}
+
+
+INPUTS: dict[str, tuple] = {
+    CONF_D01_DEFROST_START: (
+        "Defost start temperature",
+        CONF_NUMBER,
+        {
+            "icon": "mdi:thermometer-chevron-up",
+            "unit_of_measurement": UNIT_CELSIUS,
+            "device_class": DEVICE_CLASS_TEMPERATURE,
         },
-        "select": {
-            "schema": select.select_schema,
-            "registration_function": select.register_select,
-            "class_": select.Select,
-            "suffix": "select",
+        {"min_value": -30, "max_value": 0, "step": 0.5},
+    ),
+    CONF_D02_DEFROST_END: (
+        "Defrost end temperature",
+        CONF_NUMBER,
+        {
+            "icon": "mdi:thermometer-chevron-down",
+            "unit_of_measurement": UNIT_CELSIUS,
+            "device_class": DEVICE_CLASS_TEMPERATURE,
         },
-    }
-)
+        {"min_value": 0, "max_value": 30, "step": 0.5},
+    ),
+    CONF_D03_DEFROSTING_CYCLE_TIME: (
+        "Defrosting cycle time",
+        CONF_NUMBER,
+        {
+            "icon": "mdi:timer-marker",
+            "unit_of_measurement": UNIT_MINUTE,
+            "device_class": DEVICE_CLASS_DURATION,
+        },
+        {"min_value": 0, "max_value": 90, "step": 1},
+    ),
+    CONF_D04_MAX_DEFROST_TIME: (
+        "Max Defrost Time",
+        CONF_NUMBER,
+        {
+            "icon": "mdi:timer-marker",
+            "unit_of_measurement": UNIT_MINUTE,
+            "device_class": DEVICE_CLASS_DURATION,
+        },
+        {"min_value": 0, "max_value": 20, "step": 1},
+    ),
+    CONF_D05_MIN_ECONOMY_DEFROST_TIME: (
+        "Min Economy Defrost Time",
+        CONF_NUMBER,
+        {
+            "icon": "mdi:timer-marker",
+            "unit_of_measurement": UNIT_MINUTE,
+            "device_class": DEVICE_CLASS_DURATION,
+        },
+        {"min_value": 0, "max_value": 20, "step": 1},
+    ),
+    CONF_D06_DEFROST_ECO_MODE: (
+        "Defrost Eco Mode",
+        "select",
+        {
+            "icon": "mdi:sprout",
+        },
+        {"options": CONF_D06_DEFROST_ECO_MODE_OPTIONS},
+    ),
+    CONF_R04_RETURN_DIFF_COOLING: (
+        "Return Diff Cooling",
+        CONF_NUMBER,
+        {
+            "icon": "mdi:thermometer-chevron-up",
+            "unit_of_measurement": UNIT_CELSIUS,
+            "device_class": DEVICE_CLASS_TEMPERATURE,
+        },
+        {"min_value": 0, "max_value": 10, "step": 0.5},
+    ),
+    CONF_R05_SHUTDOWN_TEMP_DIFF_WHEN_COOLING: (
+        "Shutdown Temp Diff When Cooling",
+        CONF_NUMBER,
+        {
+            "icon": "mdi:thermometer-chevron-down",
+            "unit_of_measurement": UNIT_CELSIUS,
+            "device_class": DEVICE_CLASS_TEMPERATURE,
+        },
+        {"min_value": 0, "max_value": 10, "step": 0.5},
+    ),
+    CONF_R06_RETURN_DIFF_HEATING: (
+        "Return Diff Heating",
+        CONF_NUMBER,
+        {
+            "icon": "mdi:thermometer",
+            "unit_of_measurement": UNIT_CELSIUS,
+            "device_class": DEVICE_CLASS_TEMPERATURE,
+        },
+        {"min_value": 0, "max_value": 10, "step": 0.5},
+    ),
+    CONF_R07_SHUTDOWN_DIFF_HEATING: (
+        "Shutdown Temp Diff When Heating",
+        CONF_NUMBER,
+        {
+            "icon": "mdi:thermometer-off",
+            "unit_of_measurement": UNIT_CELSIUS,
+            "device_class": DEVICE_CLASS_TEMPERATURE,
+        },
+        {"min_value": 0, "max_value": 10, "step": 0.5},
+    ),
+    CONF_U02_PULSES_PER_LITER: (
+        "Pulses Per Liter",
+        CONF_NUMBER,
+        {
+            "icon": "mdi:speedometer",
+        },
+        {"min_value": 0, "max_value": 300, "step": 1},
+    ),
+    CONF_U01_FLOW_METER: (
+        "Flow Meter",
+        "select",
+        {
+            "icon": "mdi:water-sync",
+        },
+        {"options": CONF_U01_FLOW_METER_OPTIONS},
+    ),
+    CONF_H02_MODE_RESTRICTIONS: (
+        "Mode Restrictions",
+        "select",
+        {"icon": "mdi:clipboard-check-multiple"},
+        {"options": CONF_H02_MODE_RESTRICTIONS_OPTIONS},
+    ),
+}
 
-
-INPUTS = dict[str, tuple[cv.Schema, callable]](
-    {
-        CONF_D01_DEFROST_START: (
-            "Defost start temperature",
-            CONF_NUMBER,
-            {
-                "icon": "mdi:thermometer-chevron-up",
-                "unit_of_measurement": UNIT_CELSIUS,
-                "device_class": DEVICE_CLASS_TEMPERATURE,
-            },
-            {"min_value": -30, "max_value": 0, "step": 0.5},
+SENSORS: dict[str, tuple] = {
+    CONF_S02_WATER_FLOW: (
+        "Water Flow",
+        binary_sensor.binary_sensor_schema(
+            icon="mdi:water",
+            entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
         ),
-        CONF_D02_DEFROST_END: (
-            "Defrost end temperature",
-            CONF_NUMBER,
-            {
-                "icon": "mdi:thermometer-chevron-down",
-                "unit_of_measurement": UNIT_CELSIUS,
-                "device_class": DEVICE_CLASS_TEMPERATURE,
-            },
-            {"min_value": 0, "max_value": 30, "step": 0.5},
+        binary_sensor.register_binary_sensor,
+        None,
+    ),
+    CONF_R01_SETPOINT_COOLING: (
+        "Cooling Setpoint",
+        sensor.sensor_schema(
+            unit_of_measurement=UNIT_CELSIUS,
+            device_class=DEVICE_CLASS_TEMPERATURE,
+            accuracy_decimals=1,
+            icon="mdi:thermostat",
         ),
-        CONF_D03_DEFROSTING_CYCLE_TIME: (
-            "Defrosting cycle time",
-            CONF_NUMBER,
-            {
-                "icon": "mdi:timer-marker",
-                "unit_of_measurement": UNIT_MINUTE,
-                "device_class": DEVICE_CLASS_DURATION,
-            },
-            {"min_value": 0, "max_value": 90, "step": 1},
+        sensor.register_sensor,
+        create_throttle_avg_filter,
+    ),
+    CONF_R02_SETPOINT_HEATING: (
+        "Heating Setpoint",
+        sensor.sensor_schema(
+            unit_of_measurement=UNIT_CELSIUS,
+            device_class=DEVICE_CLASS_TEMPERATURE,
+            accuracy_decimals=1,
+            icon="mdi:thermostat",
         ),
-        CONF_D04_MAX_DEFROST_TIME: (
-            "Max Defrost Time",
-            CONF_NUMBER,
-            {
-                "icon": "mdi:timer-marker",
-                "unit_of_measurement": UNIT_MINUTE,
-                "device_class": DEVICE_CLASS_DURATION,
-            },
-            {"min_value": 0, "max_value": 20, "step": 1},
+        sensor.register_sensor,
+        create_throttle_avg_filter,
+    ),
+    CONF_R03_SETPOINT_AUTO: (
+        "Auto Setpoint",
+        sensor.sensor_schema(
+            unit_of_measurement=UNIT_CELSIUS,
+            device_class=DEVICE_CLASS_TEMPERATURE,
+            accuracy_decimals=1,
+            icon="mdi:thermostat-auto",
         ),
-        CONF_D05_MIN_ECONOMY_DEFROST_TIME: (
-            "Min Economy Defrost Time",
-            CONF_NUMBER,
-            {
-                "icon": "mdi:timer-marker",
-                "unit_of_measurement": UNIT_MINUTE,
-                "device_class": DEVICE_CLASS_DURATION,
-            },
-            {"min_value": 0, "max_value": 20, "step": 1},
+        sensor.register_sensor,
+        create_throttle_avg_filter,
+    ),
+    CONF_TEMPERATURE_OUTLET: (
+        "Outlet Temperature",
+        sensor.sensor_schema(
+            unit_of_measurement=UNIT_CELSIUS,
+            device_class=DEVICE_CLASS_TEMPERATURE,
+            state_class=STATE_CLASS_MEASUREMENT,
+            accuracy_decimals=1,
+            icon="mdi:sun-thermometer-outline",
         ),
-        CONF_D06_DEFROST_ECO_MODE: (
-            "Defrost Eco Mode",
-            "select",
-            {
-                "icon": "mdi:sprout",
-            },
-            {"options": CONF_D06_DEFROST_ECO_MODE_OPTIONS},
+        sensor.register_sensor,
+        create_throttle_avg_filter,
+    ),
+    CONF_R08_MIN_COOL_SETPOINT: (
+        "Min Cool Setpoint",
+        sensor.sensor_schema(
+            unit_of_measurement=UNIT_CELSIUS,
+            device_class=DEVICE_CLASS_TEMPERATURE,
+            accuracy_decimals=1,
+            icon="mdi:thermostat",
         ),
-        CONF_R04_RETURN_DIFF_COOLING: (
-            "Return Diff Cooling",
-            CONF_NUMBER,
-            {
-                "icon": "mdi:thermometer-chevron-up",
-                "unit_of_measurement": UNIT_CELSIUS,
-                "device_class": DEVICE_CLASS_TEMPERATURE,
-            },
-            {"min_value": 0, "max_value": 10, "step": 0.5},
+        sensor.register_sensor,
+        create_throttle_avg_filter,
+    ),
+    CONF_R09_MAX_COOLING_SETPOINT: (
+        "Max Cooling Setpoint",
+        sensor.sensor_schema(
+            unit_of_measurement=UNIT_CELSIUS,
+            device_class=DEVICE_CLASS_TEMPERATURE,
+            accuracy_decimals=1,
+            icon="mdi:thermostat",
         ),
-        CONF_R05_SHUTDOWN_TEMP_DIFF_WHEN_COOLING: (
-            "Shutdown Temp Diff When Cooling",
-            CONF_NUMBER,
-            {
-                "icon": "mdi:thermometer-chevron-down",
-                "unit_of_measurement": UNIT_CELSIUS,
-                "device_class": DEVICE_CLASS_TEMPERATURE,
-            },
-            {"min_value": 0, "max_value": 10, "step": 0.5},
+        sensor.register_sensor,
+        create_throttle_avg_filter,
+    ),
+    CONF_R10_MIN_HEATING_SETPOINT: (
+        "Min Heating Setpoint",
+        sensor.sensor_schema(
+            unit_of_measurement=UNIT_CELSIUS,
+            device_class=DEVICE_CLASS_TEMPERATURE,
+            accuracy_decimals=1,
+            icon="mdi:thermostat",
         ),
-        CONF_R06_RETURN_DIFF_HEATING: (
-            "Return Diff Heating",
-            CONF_NUMBER,
-            {
-                "icon": "mdi:thermometer",
-                "unit_of_measurement": UNIT_CELSIUS,
-                "device_class": DEVICE_CLASS_TEMPERATURE,
-            },
-            {"min_value": 0, "max_value": 10, "step": 0.5},
+        sensor.register_sensor,
+        create_throttle_avg_filter,
+    ),
+    CONF_R11_MAX_HEATING_SETPOINT: (
+        "Max Heating Setpoint",
+        sensor.sensor_schema(
+            unit_of_measurement=UNIT_CELSIUS,
+            device_class=DEVICE_CLASS_TEMPERATURE,
+            accuracy_decimals=1,
+            icon="mdi:thermostat",
         ),
-        CONF_R07_SHUTDOWN_DIFF_HEATING: (
-            "Shutdown Temp Diff When Heating",
-            CONF_NUMBER,
-            {
-                "icon": "mdi:thermometer-off",
-                "unit_of_measurement": UNIT_CELSIUS,
-                "device_class": DEVICE_CLASS_TEMPERATURE,
-            },
-            {"min_value": 0, "max_value": 10, "step": 0.5},
+        sensor.register_sensor,
+        create_throttle_avg_filter,
+    ),
+    CONF_TEMPERATURE_SUCTION: (
+        "Suction Temperature",
+        sensor.sensor_schema(
+            unit_of_measurement=UNIT_CELSIUS,
+            device_class=DEVICE_CLASS_TEMPERATURE,
+            state_class=STATE_CLASS_MEASUREMENT,
+            accuracy_decimals=1,
+            icon="mdi:sun-thermometer-outline",
         ),
-        CONF_U02_PULSES_PER_LITER: (
-            "Pulses Per Liter",
-            CONF_NUMBER,
-            {
-                "icon": "mdi:speedometer",
-            },
-            {"min_value": 0, "max_value": 300, "step": 1},
+        sensor.register_sensor,
+        create_throttle_avg_filter,
+    ),
+    CONF_TEMPERATURE_COIL: (
+        "Coil Temperature",
+        sensor.sensor_schema(
+            unit_of_measurement=UNIT_CELSIUS,
+            device_class=DEVICE_CLASS_TEMPERATURE,
+            state_class=STATE_CLASS_MEASUREMENT,
+            accuracy_decimals=1,
+            icon="mdi:air-conditioner",
         ),
-        CONF_U01_FLOW_METER: (
-            "Flow Meter",
-            "select",
-            {
-                "icon": "mdi:water-sync",
-            },
-            {"options": CONF_U01_FLOW_METER_OPTIONS},
+        sensor.register_sensor,
+        create_throttle_avg_filter,
+    ),
+    CONF_TEMPERATURE_AMBIENT: (
+        "Ambient Temperature",
+        sensor.sensor_schema(
+            unit_of_measurement=UNIT_CELSIUS,
+            device_class=DEVICE_CLASS_TEMPERATURE,
+            state_class=STATE_CLASS_MEASUREMENT,
+            accuracy_decimals=1,
+            icon="mdi:thermometer",
         ),
-        CONF_H02_MODE_RESTRICTIONS: (
-            "Mode Restrictions",
-            "select",
-            {"icon": "mdi:clipboard-check-multiple"},
-            {"options": CONF_H02_MODE_RESTRICTIONS_OPTIONS},
+        sensor.register_sensor,
+        create_throttle_avg_filter,
+    ),
+    CONF_TEMPERATURE_EXHAUST: (
+        "Exhaust Temperature",
+        sensor.sensor_schema(
+            unit_of_measurement=UNIT_CELSIUS,
+            device_class=DEVICE_CLASS_TEMPERATURE,
+            state_class=STATE_CLASS_MEASUREMENT,
+            accuracy_decimals=1,
+            icon="mdi:smoke-detector",
         ),
-      
-    }
-)
-
-SENSORS = dict[str, tuple[str, cv.Schema, callable]](
-    {
-        CONF_S02_WATER_FLOW: (
-            "Water Flow",
-            binary_sensor.binary_sensor_schema(
-                icon="mdi:water",
-                entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
-            ),
-            binary_sensor.register_binary_sensor,
-            None,
+        sensor.register_sensor,
+        create_throttle_avg_filter,
+    ),
+    CONF_ACTUAL_STATUS: (
+        "Actual Status",
+        text_sensor.text_sensor_schema(
+            icon="mdi:heat",
+            entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
         ),
-        CONF_R01_SETPOINT_COOLING: (
-            "Cooling Setpoint",
-            sensor.sensor_schema(
-                unit_of_measurement=UNIT_CELSIUS,
-                device_class=DEVICE_CLASS_TEMPERATURE,
-                # state_class=STATE_CLASS_MEASUREMENT,
-                accuracy_decimals=1,
-                icon="mdi:thermostat",
-            ),
-            sensor.register_sensor,
-            create_throttle_avg_filter,
+        text_sensor.register_text_sensor,
+        None,
+    ),
+    CONF_HEATER_STATUS_CODE: (
+        "Heater Status",
+        text_sensor.text_sensor_schema(
+            icon="mdi:alert-circle-outline",
+            entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
         ),
-        CONF_R02_SETPOINT_HEATING: (
-            "Heating Setpoint",
-            sensor.sensor_schema(
-                unit_of_measurement=UNIT_CELSIUS,
-                device_class=DEVICE_CLASS_TEMPERATURE,
-                # state_class=STATE_CLASS_MEASUREMENT,
-                accuracy_decimals=1,
-                icon="mdi:thermostat",
-            ),
-            sensor.register_sensor,
-            create_throttle_avg_filter,
+        text_sensor.register_text_sensor,
+        None,
+    ),
+    CONF_HEATER_STATUS_DESCRIPTION: (
+        "Status Description",
+        text_sensor.text_sensor_schema(
+            icon="mdi:information-outline",
+            entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
         ),
-        CONF_R03_SETPOINT_AUTO: (
-            "Auto Setpoint",
-            sensor.sensor_schema(
-                unit_of_measurement=UNIT_CELSIUS,
-                device_class=DEVICE_CLASS_TEMPERATURE,
-                # state_class=STATE_CLASS_MEASUREMENT,
-                accuracy_decimals=1,
-                icon="mdi:thermostat-auto",
-            ),
-            sensor.register_sensor,
-            create_throttle_avg_filter,
+        text_sensor.register_text_sensor,
+        None,
+    ),
+    CONF_HEATER_STATUS_SOLUTION: (
+        "Status Solution",
+        text_sensor.text_sensor_schema(
+            icon="mdi:toolbox-outline",
+            entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
         ),
-        CONF_TEMPERATURE_OUTLET: (
-            "Outlet Temperature",
-            sensor.sensor_schema(
-                unit_of_measurement=UNIT_CELSIUS,
-                device_class=DEVICE_CLASS_TEMPERATURE,
-                state_class=STATE_CLASS_MEASUREMENT,
-                accuracy_decimals=1,
-                icon="mdi:sun-thermometer-outline",
-            ),
-            sensor.register_sensor,
-            create_throttle_avg_filter,
-        ),
-        CONF_R08_MIN_COOL_SETPOINT: (
-            "Min Cool Setpoint",
-            sensor.sensor_schema(
-                unit_of_measurement=UNIT_CELSIUS,
-                device_class=DEVICE_CLASS_TEMPERATURE,
-                # state_class=STATE_CLASS_MEASUREMENT,
-                accuracy_decimals=1,
-                icon="mdi:thermostat",
-            ),
-            sensor.register_sensor,
-            create_throttle_avg_filter,
-        ),
-        CONF_R09_MAX_COOLING_SETPOINT: (
-            "Max Cooling Setpoint",
-            sensor.sensor_schema(
-                unit_of_measurement=UNIT_CELSIUS,
-                device_class=DEVICE_CLASS_TEMPERATURE,
-                # state_class=STATE_CLASS_MEASUREMENT,
-                accuracy_decimals=1,
-                icon="mdi:thermostat",
-            ),
-            sensor.register_sensor,
-            create_throttle_avg_filter,
-        ),
-        CONF_R10_MIN_HEATING_SETPOINT: (
-            "Min Heating Setpoint",
-            sensor.sensor_schema(
-                unit_of_measurement=UNIT_CELSIUS,
-                device_class=DEVICE_CLASS_TEMPERATURE,
-                # state_class=STATE_CLASS_MEASUREMENT,
-                accuracy_decimals=1,
-                icon="mdi:thermostat",
-            ),
-            sensor.register_sensor,
-            create_throttle_avg_filter,
-        ),
-        CONF_R11_MAX_HEATING_SETPOINT: (
-            "Max Heating Setpoint",
-            sensor.sensor_schema(
-                unit_of_measurement=UNIT_CELSIUS,
-                device_class=DEVICE_CLASS_TEMPERATURE,
-                # state_class=STATE_CLASS_MEASUREMENT,
-                accuracy_decimals=1,
-                icon="mdi:thermostat",
-            ),
-            sensor.register_sensor,
-            create_throttle_avg_filter,
-        ),
-        CONF_TEMPERATURE_SUCTION: (
-            "Suction Temperature",
-            sensor.sensor_schema(
-                unit_of_measurement=UNIT_CELSIUS,
-                device_class=DEVICE_CLASS_TEMPERATURE,
-                state_class=STATE_CLASS_MEASUREMENT,
-                accuracy_decimals=1,
-                icon="mdi:sun-thermometer-outline",
-            ),
-            sensor.register_sensor,
-            create_throttle_avg_filter,
-        ),
-        CONF_TEMPERATURE_COIL: (
-            "Coil Temperature",
-            sensor.sensor_schema(
-                unit_of_measurement=UNIT_CELSIUS,
-                device_class=DEVICE_CLASS_TEMPERATURE,
-                state_class=STATE_CLASS_MEASUREMENT,
-                accuracy_decimals=1,
-                icon="mdi:air-conditioner",
-            ),
-            sensor.register_sensor,
-            create_throttle_avg_filter,
-        ),
-        CONF_TEMPERATURE_AMBIENT: (
-            "Ambient Temperature",
-            sensor.sensor_schema(
-                unit_of_measurement=UNIT_CELSIUS,
-                device_class=DEVICE_CLASS_TEMPERATURE,
-                state_class=STATE_CLASS_MEASUREMENT,
-                accuracy_decimals=1,
-                icon="mdi:thermometer",
-            ),
-            sensor.register_sensor,
-            create_throttle_avg_filter,
-        ),
-        CONF_TEMPERATURE_EXHAUST: (
-            "Exhaust Temperature",
-            sensor.sensor_schema(
-                unit_of_measurement=UNIT_CELSIUS,
-                device_class=DEVICE_CLASS_TEMPERATURE,
-                state_class=STATE_CLASS_MEASUREMENT,
-                accuracy_decimals=1,
-                icon="mdi:smoke-detector",
-            ),
-            sensor.register_sensor,
-            create_throttle_avg_filter,
-        ),
-        CONF_ACTUAL_STATUS: (
-            "Actual Status",
-            text_sensor.text_sensor_schema(
-                icon="mdi:heat",
-                entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
-
-            ),
-            text_sensor.register_text_sensor,
-            None,
-        ),
-        CONF_HEATER_STATUS_CODE: (
-            "Heater Status",
-            text_sensor.text_sensor_schema(
-                icon="mdi:alert-circle-outline",
-                entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
-            ),
-            text_sensor.register_text_sensor,
-            None,
-        ),
-        CONF_HEATER_STATUS_DESCRIPTION: (
-            "Status Description",
-            text_sensor.text_sensor_schema(
-                icon="mdi:information-outline",
-                entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
-            ),
-            text_sensor.register_text_sensor,
-            None,
-        ),
-        CONF_HEATER_STATUS_SOLUTION: (
-            "Status Solution",
-            text_sensor.text_sensor_schema(
-                icon="mdi:toolbox-outline",
-                entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
-            ),
-            text_sensor.register_text_sensor,
-            None,
-        ),
-    }
-)
+        text_sensor.register_text_sensor,
+        None,
+    ),
+}
 
 SENSORS_SCHEMA = cv.All(
     {
@@ -635,7 +619,6 @@ CONFIG_SCHEMA = BASE_SCHEMA.extend(
 async def to_code(config):
 
     pin_component = await cg.gpio_pin_expression(config[CONF_GPIO_NETPIN])
-    # max_buffer_count = config[CONF_MAX_BUFFER_COUNT]
     heater_component = cg.new_Pvariable(config[CONF_ID], pin_component)
 
     await cg.register_component(heater_component, config)
