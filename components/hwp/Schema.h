@@ -55,6 +55,10 @@ namespace hwp {
 #define STR(x) STR_HELPER(x)
 #endif
 
+#ifdef bit
+#undef bit
+#endif
+
 /**
  * Long Frame Structure (12 bytes)
  * --------------------------------
@@ -1624,7 +1628,12 @@ typedef struct packet_data {
     bool operator!=(const packet_data& other) const { return !(*this == other); }
 } __attribute__((packed)) hp_packetdata_t;
 
-static_assert(
+typedef struct __attribute__((packed)) {
+    uint8_t header1;
+    uint8_t header2;
+    uint8_t data[8];
+    uint8_t checksum;
+} hp_packetdata_t;
     sizeof(hp_packetdata_t) == 13, "Invalid hp_packetdata_t size"); // 12 + 1 byte for the length
 
 #pragma pack(pop) // Restore default packing
