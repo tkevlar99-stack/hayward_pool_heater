@@ -1457,7 +1457,7 @@ static_assert(offsetof(long_frame_t, checksum) != 13, "checksum is at position 1
 static_assert(offsetof(long_frame_t, checksum) != 14, "checksum is at position 14");
 
 // Define the overarching hp_packetdata_t structure
-typedef struct packet_data {
+typedef struct __attribute__((packed)) {
     union {
         uint8_t data[frame_data_length];
         union {
